@@ -189,6 +189,16 @@ export class DialogueService extends Service {
   }
 }
 
+/** Placeholders for media elements in search results. Koishi serializes images as `<img>`, while the old implementation only handled `<image>`. */
+const MEDIA_PLACEHOLDER: Record<string, string> = {
+  img: '[图片]',
+  image: '[图片]',
+  audio: '[音频]',
+  video: '[视频]',
+}
+
+const MEDIA_TAG_RE = /<(img|image|audio|video)\b[^>]*\/?>/gi
+
 export function formatAnswer(source: string, { maxAnswerLength = 100 }: Dialogue.Config) {
   let trimmed = false
   const lines = source.split(/(\r?\n|\$n)/g)
@@ -196,7 +206,11 @@ export function formatAnswer(source: string, { maxAnswerLength = 100 }: Dialogue
     trimmed = true
     source = lines[0].trim()
   }
-  source = source.replace(/<image [^>]+>/g, '[图片]')
+  // Replace media elements before truncating: otherwise `maxAnswerLength` cuts the
+  // tag into a fragment like `<img src="file:///home/...……`, which is sent as plain
+  // text and leaks the absolute path on the server (the assets service falls back
+  // to the `file:` scheme when `selfUrl` is not configured).
+  source = source.replace(MEDIA_TAG_RE, (_, type: string) => MEDIA_PLACEHOLDER[type.toLowerCase()] ?? '')
   if (source.length > maxAnswerLength) {
     trimmed = true
     source = source.slice(0, maxAnswerLength)

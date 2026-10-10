@@ -2,6 +2,8 @@ import { Logger } from 'koishi'
 import Assets from '@koishijs/assets'
 import createEnvironment from '.'
 import * as jest from 'jest-mock'
+import { strict as assert } from 'assert'
+import { formatAnswer } from 'koishi-plugin-dialogue'
 
 const logger = new Logger('dialogue')
 
@@ -131,5 +133,30 @@ describe('koishi-plugin-dialogue (assets)', () => {
     } finally {
       logger.level = Logger.WARN
     }
+  })
+})
+
+describe('koishi-plugin-dialogue (formatAnswer)', () => {
+  it('replace media elements with placeholders', () => {
+    assert.equal(formatAnswer('<img src="file:///home/user/data/assets/hash.png"/>', {}), '[图片]')
+    assert.equal(formatAnswer('<image src="https://example.com/a.png"/>', {}), '[图片]')
+    assert.equal(formatAnswer('<audio src="file:///home/user/a.mp3"/>', {}), '[音频]')
+    assert.equal(formatAnswer('<video src="file:///home/user/a.mp4"/>', {}), '[视频]')
+    assert.equal(formatAnswer('纯文本回答', {}), '纯文本回答')
+  })
+
+  it('do not leak file path when answer is truncated', () => {
+    // 先替换再截断：旧实现不认 <img>，会把标签截成 `<img src="file:///home/...……` 当文本发出去
+    const source = `<img src="file:///home/user/data/assets/${'a'.repeat(80)}.png"/>`
+    assert.equal(formatAnswer(source, {}), '[图片]')
+  })
+})
+
+describe('koishi-plugin-dialogue (media in search result)', () => {
+  const { u3g1 } = createEnvironment()
+
+  it('hide media src in search result', async () => {
+    await u3g1.shouldReply('# foo <img src="file:///home/user/data/assets/hash.png"/>', '问答已添加，编号为 1。')
+    await u3g1.shouldReply('## foo', '问题“foo”的回答如下：\n1. [图片]')
   })
 })
