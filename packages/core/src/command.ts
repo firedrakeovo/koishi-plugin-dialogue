@@ -32,6 +32,21 @@ const cheatSheet = (session: Dialogue.Session, config: Dialogue.Config) => {
   const { authority: a, prefix: p } = config
   const l = p[p.length - 1]
   const output = new OrderedList()
+
+  // 默认只展示基础用法，完整用法（正则、管道等）用 `wd -a` 查看
+  if (!session.argv?.options?.all) {
+    output.add(`\
+问答基础用法：
+　添加问答：问 问题 答 回答
+　删除问答：删除问答 关键词
+
+${p} 指令（完整用法：${p} -a）：
+　搜索问答：${p}${l} 关键词
+　查看问答：${p}id
+　按编号删除：${p}id -r`, 1000)
+    return output.toString()
+  }
+
   output.add(`\
 教学系统基本用法：
 　添加问答：${p} 问题 回答
@@ -41,6 +56,7 @@ const cheatSheet = (session: Dialogue.Session, config: Dialogue.Config) => {
 　修改问题：${p}id 问题
 　修改回答：${p}id ~ 回答
 　删除问答：${p}id -r
+　按问题删除：删除问答 问题
 　批量查看：${p}${l}id
 搜索选项：
 　管道语法：　　　|
@@ -111,7 +127,6 @@ export default function command(ctx: Context, config: Dialogue.Config) {
     argv.tokens.forEach(Argv.revert)
     argv.source = session.stripped.content
     argv.options = {}
-    const { length } = argv.tokens
     if (capture[1] === last) {
       if (!argv.tokens.length) {
         argv.name = 'dialogue.stats'
@@ -122,7 +137,8 @@ export default function command(ctx: Context, config: Dialogue.Config) {
         argv.options.autoMerge = true
         argv.options.regexp = true
       }
-    } else if (!capture[2] && !length) {
+    } else if (!capture[2] && !argv.tokens.filter(token => !token.content.startsWith('-')).length) {
+      // `wd` 或 `wd -a` 等纯选项形式 → 展示用法（-a 会展示完整用法）
       argv.options.help = true
     }
 
@@ -137,6 +153,7 @@ export default function command(ctx: Context, config: Dialogue.Config) {
   ctx.command('teach', { authority: config.authority.base, checkUnknown: true, hideOptions: true })
     .userFields(['authority', 'id'])
     .option('target', '')
+    .option('all', '-a')
     .usage(session => cheatSheet(session as Dialogue.Session, config))
     .before(({ session }) => {
       return ctx.serial('dialogue/before-action', session as never)

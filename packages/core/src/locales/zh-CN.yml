@@ -16,6 +16,7 @@ commands:
       excludeLast: 排除最近的修改数量
       target: 查看或修改已有问题
       remove: 彻底删除问答
+      all: 展示完整用法
 
       # internal
       ignoreHint: 忽略智能提示
@@ -102,3 +103,13 @@ commands:
     stats:
       messages:
         output: 共收录了 {questions} 个问题和 {dialogues} 个回答。
+
+  删除问答:
+    description: 按问题删除已有问答
+    options:
+      regexp: 使用正则表达式匹配问题
+    messages:
+      empty: 没有搜索到问题“{0}”的问答。
+      empty-regexp: 没有搜索到含有正则表达式“{0}”的问答。
+      success: 已删除问答 {0}（{1}）
+      forbidden: 问答 {0} 因权限过低无法删除。

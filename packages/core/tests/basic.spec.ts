@@ -160,3 +160,61 @@ describe('koishi-plugin-dialogue (media in search result)', () => {
     await u3g1.shouldReply('## foo', '问题“foo”的回答如下：\n1. [图片]')
   })
 })
+
+describe('koishi-plugin-dialogue (ask format)', () => {
+  const { u3g1, u2g1 } = createEnvironment()
+
+  it('teach with 问/答', async () => {
+    await u3g1.shouldReply('问 foo 答 bar', '问答已添加，编号为 1。')
+    await u3g1.shouldReply('foo', 'bar')
+  })
+
+  it('teach with 正则问/答', async () => {
+    await u3g1.shouldReply('正则问 ^f.o$ 答 baz', '问答已添加，编号为 2。')
+    await u3g1.shouldReply('foo', 'baz')
+  })
+
+  it('teach with 模糊问/答', async () => {
+    await u3g1.shouldReply('模糊问 晚安 答 不准睡', '问答已添加，编号为 3。')
+    await u3g1.shouldReply('晚安啦', '不准睡')
+  })
+
+  it('ignore natural sentences', async () => {
+    await u2g1.shouldNotReply('我问你一个问题答一下')
+  })
+})
+
+describe('koishi-plugin-dialogue (usage)', () => {
+  const { u3g1 } = createEnvironment()
+
+  it('show basic usage by default', async () => {
+    await u3g1.shouldReply('#', /问答基础用法/)
+    await u3g1.shouldReply('#', /添加问答：问 问题 答 回答/)
+    await u3g1.shouldReply('#', /wd 指令/)
+  })
+
+  it('show full usage with -a', async () => {
+    await u3g1.shouldReply('# -a', /教学系统基本用法/)
+    await u3g1.shouldReply('# -a', /管道语法/)
+  })
+})
+
+describe('koishi-plugin-dialogue (remove by question)', () => {
+  const { u3g1 } = createEnvironment()
+
+  it('remove all dialogues of the question', async () => {
+    await u3g1.shouldReply('# foo bar', '问答已添加，编号为 1。')
+    await u3g1.shouldReply('# foo baz', '问答已添加，编号为 2。')
+    await u3g1.shouldReply('删除问答 foo', '已删除问答 1, 2（foo、foo）')
+    await u3g1.shouldReply('## foo', '没有搜索到问题“foo”，请尝试使用正则表达式匹配。')
+  })
+
+  it('remove by regexp', async () => {
+    await u3g1.shouldReply('# goo baz', '问答已添加，编号为 1。')
+    await u3g1.shouldReply('删除问答 -x ^go', '已删除问答 1（goo）')
+  })
+
+  it('unknown question', async () => {
+    await u3g1.shouldReply('删除问答 bar', '没有搜索到问题“bar”的问答。')
+  })
+})

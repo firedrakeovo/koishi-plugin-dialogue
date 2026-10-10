@@ -4,7 +4,9 @@ import * as Koishi from 'koishi'
 // features
 import { Abstract, DialogueService } from './service'
 import { OrderedList } from './utils'
+import ask from './ask'
 import command from './command'
+import remove from './remove'
 import receiver from './receiver'
 import search from './search'
 import update from './update'
@@ -94,6 +96,8 @@ export namespace Dialogue {
 
   export interface Options {
     help?: boolean
+    /** 展示完整用法（`wd -a`） */
+    all?: boolean
     original?: string
     appellative?: boolean
     action?: 'review' | 'revert' | 'remove' | 'create' | 'search' | 'modify'
@@ -152,7 +156,9 @@ export function apply(ctx: Context, config: Config) {
 
   // features
   ctx.plugin(DialogueService, config)
+  ctx.plugin(ask, config)
   ctx.plugin(command, config)
+  ctx.plugin(remove, config)
   ctx.plugin(receiver, config)
   ctx.plugin(search, config)
   ctx.plugin(update, config)
